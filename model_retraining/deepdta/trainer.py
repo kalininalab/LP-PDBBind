@@ -182,14 +182,20 @@ class Trainer:
         
         self.model.load_state_dict(best_weights)
         test_result = []
+        labels = []
         with torch.no_grad():
             for protein, ligand, target in test_loader:
                 protein, ligand, target = protein.to(self.device), ligand.to(self.device), target.to(self.device)
 
                 output = self.model(protein, ligand)
                 test_result.append(output.cpu().numpy())
+                labels.append(target.cpu().numpy())
         test_result = np.concatenate(test_result)
-        np.savetxt('test-result-prk{}-ldk{}.txt'.format(self.protein_kernel, self.ligand_kernel), test_result)
+        labels = np.concatenate(labels)
+        # np.savetxt('test-result-prk{}-ldk{}.txt'.format(self.protein_kernel, self.ligand_kernel), test_result)
+        with open('test-result-prk{}-ldk{}.txt'.format(self.protein_kernel, self.ligand_kernel), "w") as out:
+            for p, l in zip(test_result, labels):
+                print(p, l, sep=',', file=out)
         
         self.logger.info('Best Model Loaded from Epoch: {}'.format(best_epoch+1))
         torch.save(self.model.state_dict(), save_path)
